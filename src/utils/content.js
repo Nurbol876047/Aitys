@@ -12,6 +12,8 @@ import {
   Wind,
 } from "lucide-react";
 
+const assetPath = (path) => `${import.meta.env.BASE_URL}${path}`;
+
 // Негізгі мәтіндерді, жауаптарды және сурет жолдарын осы файлдан өзгертуге болады.
 export const heroCopy = {
   title: "Арал теңізі: табиғат пен адамның айтысы",
@@ -263,11 +265,11 @@ export const lessonMode = [
 
 export const imageSlots = {
   // Фотолар public/images ішінен алынады.
-  hero: "/images/aral-hero-bg.png",
-  before: "/images/aral-before.png?v=aral1-20260427",
-  now: "/images/aral-now.png?v=aral2-20260427",
-  dustHealth: "/images/aral-dust-health.png",
-  natureHuman: "/images/nature-human.png",
-  actions: "/images/aral-actions-bg.png",
-  future: "/images/aral-future.png",
+  hero: assetPath("images/aral-hero-bg.png"),
+  before: assetPath("images/aral-before.png?v=aral1-20260427"),
+  now: assetPath("images/aral-now.png?v=aral2-20260427"),
+  dustHealth: assetPath("images/aral-dust-health.png"),
+  natureHuman: assetPath("images/nature-human.png"),
+  actions: assetPath("images/aral-actions-bg.png"),
+  future: assetPath("images/aral-future.png"),
 };

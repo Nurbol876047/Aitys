@@ -42,6 +42,7 @@ const HAND_CONNECTIONS = [
 
 const ANSWER_HOLD_FRAMES = 16;
 const ANSWER_COOLDOWN = 1800;
+const MEDIAPIPE_HANDS_PATH = `${import.meta.env.BASE_URL}mediapipe/hands/`;
 
 const gestureTabs = [
   {
@@ -160,27 +161,64 @@ function drawHand(canvas, landmarks, activeCount = 0) {
   context.restore();
 }
 
+function getMediapipeExport(module, exportName) {
+  return (
+    module?.[exportName] ??
+    module?.default?.[exportName] ??
+    (typeof window !== "undefined" ? window[exportName] : undefined)
+  );
+}
+
+function getCameraErrorMessage(error) {
+  if (!window.isSecureContext) {
+    return "Камера тек HTTPS немесе localhost арқылы іске қосылады. Сайтты https://... немесе http://localhost:5173 арқылы ашыңыз.";
+  }
+
+  if (error?.name === "NotAllowedError" || error?.name === "SecurityError") {
+    return "Камераға рұқсат берілмеді. Браузердегі камера рұқсатын қосып, қайта басыңыз.";
+  }
+
+  if (error?.name === "NotFoundError" || error?.name === "DevicesNotFoundError") {
+    return "Камера табылмады. Құрылғы камерасын қосып, бетті жаңартыңыз.";
+  }
+
+  if (error?.name === "NotReadableError" || error?.name === "TrackStartError") {
+    return "Камераны басқа бағдарлама пайдаланып тұр. Басқа қолданбаны жауып, қайта көріңіз.";
+  }
+
+  return error?.message || "Камера қосылмады. Батырмамен де жауап беруге болады.";
+}
+
 async function createHandCamera(videoElement, onResults) {
-  const [{ Hands }, { Camera: CameraRunner }] = await Promise.all([
+  const [handsModule, cameraModule] = await Promise.all([
     import("@mediapipe/hands"),
     import("@mediapipe/camera_utils"),
   ]);
+  const Hands = getMediapipeExport(handsModule, "Hands");
+  const CameraRunner = getMediapipeExport(cameraModule, "Camera");
+
+  if (!Hands || !CameraRunner) {
+    throw new Error("Қол қимылын тану модулі жүктелмеді. Бетті жаңартып көріңіз.");
+  }
 
   const hands = new Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    locateFile: (file) => `${MEDIAPIPE_HANDS_PATH}${file}`,
   });
 
   hands.setOptions({
     maxNumHands: 1,
-    modelComplexity: 1,
-    minDetectionConfidence: 0.82,
-    minTrackingConfidence: 0.78,
+    modelComplexity: 0,
+    selfieMode: true,
+    minDetectionConfidence: 0.68,
+    minTrackingConfidence: 0.62,
   });
   hands.onResults(onResults);
 
   const camera = new CameraRunner(videoElement, {
     onFrame: async () => {
-      await hands.send({ image: videoElement });
+      if (videoElement.readyState >= 2) {
+        await hands.send({ image: videoElement });
+      }
     },
     width: 960,
     height: 720,
@@ -236,9 +274,11 @@ function useHandCamera({ onResults, onStopLog }) {
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
   const mountedRef = useRef(false);
+  const onStopLogRef = useRef(onStopLog);
 
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraError, setCameraError] = useState("");
 
   const stopCamera = useCallback(() => {
@@ -253,13 +293,19 @@ function useHandCamera({ onResults, onStopLog }) {
     handsRef.current = null;
     setCameraActive(false);
     setCameraReady(false);
-    onStopLog?.();
-  }, [onStopLog]);
+    setCameraStarting(false);
+    onStopLogRef.current?.();
+  }, []);
 
   const startCamera = useCallback(async () => {
+    if (cameraStarting || cameraActive) return;
     setCameraError("");
+    setCameraStarting(true);
 
     try {
+      if (!window.isSecureContext) {
+        throw new Error(getCameraErrorMessage({ name: "SecurityError" }));
+      }
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Бұл браузер камераны қолдамайды.");
       }
@@ -279,9 +325,17 @@ function useHandCamera({ onResults, onStopLog }) {
       setCameraReady(true);
     } catch (error) {
       stopCamera();
-      setCameraError(error.message || "Камера қосылмады. Батырмамен де жауап беруге болады.");
+      setCameraError(getCameraErrorMessage(error));
+    } finally {
+      if (mountedRef.current) {
+        setCameraStarting(false);
+      }
     }
-  }, [onResults, stopCamera]);
+  }, [cameraActive, cameraStarting, onResults, stopCamera]);
+
+  useEffect(() => {
+    onStopLogRef.current = onStopLog;
+  }, [onStopLog]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -296,6 +350,7 @@ function useHandCamera({ onResults, onStopLog }) {
     canvasRef,
     cameraActive,
     cameraReady,
+    cameraStarting,
     cameraError,
     startCamera,
     stopCamera,
@@ -379,10 +434,15 @@ function GestureComparePanel() {
           <button
             type="button"
             onClick={camera.cameraActive ? camera.stopCamera : camera.startCamera}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[8px] bg-white px-3 text-sm font-black text-aral-deep transition hover:bg-sand-50"
+            disabled={camera.cameraStarting}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[8px] bg-white px-3 text-sm font-black text-aral-deep transition hover:bg-sand-50 disabled:cursor-wait disabled:opacity-70"
           >
             {camera.cameraActive ? <VideoOff size={17} /> : <Video size={17} />}
-            {camera.cameraActive ? "Камераны тоқтату" : "Камераны қосу"}
+            {camera.cameraStarting
+              ? "Камера қосылып жатыр"
+              : camera.cameraActive
+                ? "Камераны тоқтату"
+                : "Камераны қосу"}
           </button>
         </div>
 
@@ -704,10 +764,15 @@ function GestureAnswerPanel({ onAnswer }) {
             <button
               type="button"
               onClick={camera.cameraActive ? camera.stopCamera : camera.startCamera}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[8px] bg-white px-3 text-sm font-black text-aral-deep transition hover:bg-sand-50"
+              disabled={camera.cameraStarting}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[8px] bg-white px-3 text-sm font-black text-aral-deep transition hover:bg-sand-50 disabled:cursor-wait disabled:opacity-70"
             >
               {camera.cameraActive ? <VideoOff size={17} /> : <Video size={17} />}
-              {camera.cameraActive ? "Камераны тоқтату" : "Камераны қосу"}
+              {camera.cameraStarting
+                ? "Камера қосылып жатыр"
+                : camera.cameraActive
+                  ? "Камераны тоқтату"
+                  : "Камераны қосу"}
             </button>
           </div>
         </div>

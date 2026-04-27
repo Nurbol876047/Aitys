@@ -8,13 +8,13 @@ export default function ProblemSection() {
   return (
     <section id="problem" className="section-shell relative overflow-hidden bg-sand-50">
       <img
-        src="/images/aral-problem-bg.png"
+        src={`${import.meta.env.BASE_URL}images/aral-problem-bg.png`}
         alt=""
         className="absolute inset-0 h-full w-full object-cover object-center"
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(251,247,237,0.94),rgba(251,247,237,0.78)_48%,rgba(251,247,237,0.58))]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(251,247,237,0.9),rgba(251,247,237,0.58)_44%,rgba(251,247,237,0.88))]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(251,247,237,0.28),rgba(251,247,237,0.1)_46%,rgba(251,247,237,0.02))]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(251,247,237,0.22),rgba(251,247,237,0.04)_44%,rgba(251,247,237,0.18))]" />
 
       <div className="relative z-10 mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.94fr_1.06fr] lg:items-center">
         <motion.div
