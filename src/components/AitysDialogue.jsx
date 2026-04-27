@@ -1,14 +1,18 @@
 import { motion } from "framer-motion";
 import {
   ArrowRight,
+  BookOpen,
   CheckCircle2,
   Leaf,
+  MessageCircle,
   Sparkles,
   UserRound,
+  UsersRound,
   XCircle,
 } from "lucide-react";
 import {
   aitysLines,
+  aitysTypes,
   imageSlots,
   quizOptions,
   quizQuestion,
@@ -131,6 +135,61 @@ function ResultPanel({ selected }) {
   );
 }
 
+const typeIcons = [Sparkles, UsersRound, MessageCircle, BookOpen];
+
+function AitysTypesGrid() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.18 }}
+      transition={{ duration: 0.48 }}
+      className="mt-10"
+    >
+      <div className="max-w-3xl">
+        <p className="text-sm font-black uppercase text-aral-blue">
+          Айтыстың түрлері
+        </p>
+        <h3 className="mt-2 text-balance text-2xl font-black leading-tight text-aral-deep md:text-4xl">
+          Қазақ айтысындағы негізгі үлгілер
+        </h3>
+        <p className="mt-4 text-lg leading-8 text-aral-deep/72">
+          Айтыс тек ақындардың жарысы емес, ол салт-дәстүрді, білімді,
+          тапқырлықты және қоғамдық ойды жеткізетін ауыз әдебиеті үлгісі.
+        </p>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {aitysTypes.map((type, index) => {
+          const Icon = typeIcons[index % typeIcons.length];
+
+          return (
+            <article
+              key={type.title}
+              className="card-radius border border-white/60 bg-white/84 p-5 shadow-sm backdrop-blur-md"
+            >
+              <div className="flex items-start gap-3">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] bg-aral-deep text-white">
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase text-aral-green/72">
+                    {type.category}
+                  </p>
+                  <h4 className="mt-1 text-lg font-black text-aral-deep">
+                    {type.title}
+                  </h4>
+                </div>
+              </div>
+              <p className="mt-4 leading-7 text-aral-deep/72">{type.text}</p>
+            </article>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function AitysDialogue({ answer, onAnswer }) {
   const selected = quizOptions.find((option) => option.id === answer);
 
@@ -231,6 +290,8 @@ export default function AitysDialogue({ answer, onAnswer }) {
             </motion.div>
           </div>
         </div>
+
+        <AitysTypesGrid />
       </div>
     </section>
   );
