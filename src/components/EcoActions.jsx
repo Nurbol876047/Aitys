@@ -114,7 +114,7 @@ export default function EcoActions({ answer, resetToken, onScoreChange }) {
             визуалда судың қайта оралуын көрсетеді.
           </p>
 
-          <div className="mt-6 rounded-[8px] border border-white/52 bg-white/92 p-4 shadow-soft backdrop-blur-md">
+          <div className="mt-6 rounded-[8px] border border-white/50 bg-white/90 p-4 shadow-soft backdrop-blur-md">
             <div className="flex items-center justify-between gap-4">
               <p className="font-black text-aral-deep">Аралдың жағдайы</p>
               <p className="text-2xl font-black text-aral-blue">{score}%</p>
@@ -140,8 +140,8 @@ export default function EcoActions({ answer, resetToken, onScoreChange }) {
                   onClick={() => toggleAction(action.id)}
                   className={`card-radius group min-h-36 border p-4 text-left transition hover:-translate-y-1 ${
                     active
-                      ? "border-aral-green bg-[#eef8ef]/96 shadow-soft"
-                      : "border-white/52 bg-white/92 backdrop-blur-md hover:border-aral-blue/35"
+                      ? "border-aral-green bg-[#eef8ef]/90 shadow-soft"
+                      : "border-white/50 bg-white/90 backdrop-blur-md hover:border-aral-blue/30"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -170,7 +170,7 @@ export default function EcoActions({ answer, resetToken, onScoreChange }) {
           </div>
 
           {!answer && (
-            <div className="mt-4 flex gap-3 rounded-[8px] border border-white/46 bg-white/92 p-4 text-aral-alert shadow-sm backdrop-blur-md">
+            <div className="mt-4 flex gap-3 rounded-[8px] border border-white/50 bg-white/90 p-4 text-aral-alert shadow-sm backdrop-blur-md">
               <Leaf className="mt-1 shrink-0" size={20} />
               <p className="text-sm font-bold leading-6">
                 Айтыста жауап таңдамасаңыз да, шешімдер бөлімі жұмыс істейді.

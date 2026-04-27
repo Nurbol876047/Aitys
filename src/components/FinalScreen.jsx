@@ -80,7 +80,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
           viewport={{ once: true, amount: 0.22 }}
           className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch"
         >
-          <div className="card-radius border border-white/18 bg-white/10 p-5 shadow-soft backdrop-blur-md md:p-8">
+          <div className="card-radius border border-white/20 bg-white/10 p-5 shadow-soft backdrop-blur-md md:p-8">
             <p className="text-sm font-black uppercase text-sand-300">
               Қорытынды
             </p>
@@ -100,7 +100,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
                 return (
                   <article
                     key={item.title}
-                    className="card-radius border border-white/16 bg-white/12 p-4 backdrop-blur-md"
+                    className="card-radius border border-white/20 bg-white/10 p-4 backdrop-blur-md"
                   >
                     <div className="flex gap-3">
                       <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] bg-white text-aral-deep">
@@ -129,7 +129,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
               </button>
               <a
                 href="#lesson"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] border border-white/30 bg-white/12 px-5 text-base font-black text-white transition hover:-translate-y-1 hover:bg-white/18"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] border border-white/30 bg-white/10 px-5 text-base font-black text-white transition hover:-translate-y-1 hover:bg-white/20"
               >
                 <BookOpenCheck size={19} />
                 Сабақ қорытындысы
@@ -138,7 +138,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
           </div>
 
           <div className="grid gap-4">
-            <div className="card-radius border border-white/18 bg-white p-5 text-aral-deep shadow-soft md:p-6">
+            <div className="card-radius border border-white/20 bg-white p-5 text-aral-deep shadow-soft md:p-6">
               <div className="flex items-center gap-3">
                 <Trophy className="text-sand-500" size={28} />
                 <p className="font-black">Эко ұпай</p>
@@ -155,7 +155,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
               </div>
             </div>
 
-            <div className="card-radius border border-white/18 bg-white/12 p-5 shadow-soft backdrop-blur-md md:p-6">
+            <div className="card-radius border border-white/20 bg-white/10 p-5 shadow-soft backdrop-blur-md md:p-6">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="text-sand-300" size={27} />
                 <p className="font-black">Айтыстағы таңдау</p>
@@ -171,7 +171,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
               </p>
             </div>
 
-            <div className="card-radius border border-white/18 bg-white/12 p-5 shadow-soft backdrop-blur-md md:p-6">
+            <div className="card-radius border border-white/20 bg-white/10 p-5 shadow-soft backdrop-blur-md md:p-6">
               <p className="text-sm font-black uppercase text-sand-300">
                 Негізгі ой
               </p>
@@ -190,7 +190,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
           viewport={{ once: true, amount: 0.25 }}
           className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]"
         >
-          <div className="card-radius border border-white/18 bg-white/12 p-5 shadow-soft backdrop-blur-md md:p-7">
+          <div className="card-radius border border-white/20 bg-white/10 p-5 shadow-soft backdrop-blur-md md:p-7">
             <p className="text-sm font-black uppercase text-sand-300">
               Сабақта қолдану
             </p>
@@ -210,7 +210,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
               return (
                 <article
                   key={item.title}
-                  className="card-radius border border-white/18 bg-white/92 p-4 text-aral-deep shadow-sm backdrop-blur-md"
+                  className="card-radius border border-white/20 bg-white/90 p-4 text-aral-deep shadow-sm backdrop-blur-md"
                 >
                   <div className="grid h-11 w-11 place-items-center rounded-[8px] bg-sand-100 text-aral-green">
                     <Icon size={22} />
@@ -231,7 +231,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
             return (
               <div
                 key={item.title}
-                className="card-radius border border-white/18 bg-white/12 p-4 text-white shadow-sm backdrop-blur-md"
+                className="card-radius border border-white/20 bg-white/10 p-4 text-white shadow-sm backdrop-blur-md"
               >
                 <div className="grid h-10 w-10 place-items-center rounded-[8px] bg-white text-aral-deep">
                   <Icon size={20} />
@@ -242,7 +242,7 @@ export default function FinalScreen({ answer, ecoScore, onReset }) {
           })}
         </div>
 
-        <div className="mt-4 card-radius border border-white/18 bg-white/12 p-5 text-white shadow-sm backdrop-blur-md">
+        <div className="mt-4 card-radius border border-white/20 bg-white/10 p-5 text-white shadow-sm backdrop-blur-md">
           <div className="flex items-start gap-3">
             <HandMetal className="mt-1 shrink-0 text-sand-300" size={23} />
             <p className="font-bold leading-7">

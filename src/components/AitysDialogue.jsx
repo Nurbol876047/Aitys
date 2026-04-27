@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -8,6 +9,7 @@ import {
   Sparkles,
   UserRound,
   UsersRound,
+  Volume2,
   XCircle,
 } from "lucide-react";
 import {
@@ -57,8 +59,22 @@ function CharacterStage() {
   );
 }
 
-function DialogueBubble({ line, index }) {
+function DialogueBubble({ line, index, onPlayFrom }) {
   const isNature = line.speaker === "Табиғат";
+
+  const handlePlay = () => {
+    if (onPlayFrom) {
+      onPlayFrom(index);
+    } else {
+      if (window.currentAitysAudio) {
+        window.currentAitysAudio.pause();
+        window.currentAitysAudio.currentTime = 0;
+      }
+      const audio = new Audio(`/audio/line_${index}.mp3`);
+      window.currentAitysAudio = audio;
+      audio.play().catch(console.error);
+    }
+  };
 
   return (
     <motion.article
@@ -81,17 +97,26 @@ function DialogueBubble({ line, index }) {
         >
           {isNature ? <Leaf size={22} /> : <UserRound size={22} />}
         </div>
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-black text-aral-deep">
-              {line.speaker}
-            </h3>
-            <span className="rounded-[8px] bg-sand-100 px-2 py-1 text-xs font-black uppercase text-aral-deep/65">
-              {line.mood}
-            </span>
-            <span className="text-xs font-bold text-aral-deep/45">
-              шумақ {index + 1}
-            </span>
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-black text-aral-deep">
+                {line.speaker}
+              </h3>
+              <span className="rounded-[8px] bg-sand-100 px-2 py-1 text-xs font-black uppercase text-aral-deep/65">
+                {line.mood}
+              </span>
+              <span className="text-xs font-bold text-aral-deep/45">
+                шумақ {index + 1}
+              </span>
+            </div>
+            <button
+              onClick={handlePlay}
+              className="rounded-[8px] bg-white/50 p-2 text-aral-deep/50 transition hover:bg-aral-blue/10 hover:text-aral-blue"
+              title="Дауыстап оқу"
+            >
+              <Volume2 size={20} />
+            </button>
           </div>
           <p className="mt-2 text-lg font-semibold leading-8 text-aral-deep/82">
             {line.text}
@@ -191,6 +216,61 @@ function AitysTypesGrid() {
 }
 
 export default function AitysDialogue({ answer, onAnswer }) {
+  const [isPlayingAll, setIsPlayingAll] = useState(false);
+
+  const playSequence = async (startIndex = 0) => {
+    window.currentAitysIsPlayingAll = false;
+    if (window.currentAitysAudio) {
+      window.currentAitysAudio.pause();
+      window.currentAitysAudio.currentTime = 0;
+    }
+    
+    // Кішкене кідіріс (алдыңғы цикл үзілуі үшін)
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    setIsPlayingAll(true);
+    window.currentAitysIsPlayingAll = true;
+
+    for (let i = startIndex; i < aitysLines.length; i++) {
+      if (!window.currentAitysIsPlayingAll) break;
+
+      const audio = new Audio(`/audio/line_${i}.mp3`);
+      window.currentAitysAudio = audio;
+
+      await new Promise((resolve) => {
+        audio.onended = resolve;
+        audio.onerror = resolve;
+        audio.play().catch((err) => {
+          console.error("Audio play error:", err);
+          resolve();
+        });
+      });
+
+      // 1 секунд кідіріс (задержка 1 секунда)
+      if (i < aitysLines.length - 1 && window.currentAitysIsPlayingAll) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    if (window.currentAitysIsPlayingAll) {
+      setIsPlayingAll(false);
+      window.currentAitysIsPlayingAll = false;
+    }
+  };
+
+  const handlePlayAll = () => {
+    if (isPlayingAll) {
+      window.currentAitysIsPlayingAll = false;
+      if (window.currentAitysAudio) {
+        window.currentAitysAudio.pause();
+        window.currentAitysAudio.currentTime = 0;
+      }
+      setIsPlayingAll(false);
+    } else {
+      playSequence(0);
+    }
+  };
+
   const selected = quizOptions.find((option) => option.id === answer);
 
   const choose = (option) => {
@@ -226,6 +306,15 @@ export default function AitysDialogue({ answer, onAnswer }) {
               реакциясын өзгертеді.
             </p>
             <div className="mt-6">
+              <button
+                onClick={handlePlayAll}
+                className="inline-flex items-center gap-2 rounded-[8px] bg-aral-green px-5 py-3 text-sm font-black text-white shadow-soft transition hover:-translate-y-1 hover:bg-aral-deep"
+              >
+                <Volume2 size={20} />
+                {isPlayingAll ? "Тыңдауды тоқтату" : "Диалогты толық тыңдау"}
+              </button>
+            </div>
+            <div className="mt-8">
               <CharacterStage />
             </div>
           </motion.div>
@@ -237,6 +326,7 @@ export default function AitysDialogue({ answer, onAnswer }) {
                   key={`${line.speaker}-${line.text}`}
                   line={line}
                   index={index}
+                  onPlayFrom={playSequence}
                 />
               ))}
             </div>

@@ -86,6 +86,16 @@ export const aitysLines = [
     mood: "мойындау",
     text: "Енді біз жауапкершілікпен әрекет етуіміз керек.",
   },
+  {
+    speaker: "Табиғат",
+    mood: "талап",
+    text: "Бос сөздің қажеті жоқ, маған нақты іс керек. Әр тамшыны қадірле!",
+  },
+  {
+    speaker: "Адам",
+    mood: "уәде",
+    text: "Уәде беремін! Біз Аралды қалпына келтіріп, қателігімізді түзейміз.",
+  },
 ];
 
 export const aitysTypes = [
@@ -320,7 +330,7 @@ export const imageSlots = {
   // Фотолар public/images ішінен алынады.
   hero: assetPath("images/aral-hero-bg.png"),
   before: assetPath("images/aral-before.png?v=aral1-20260427"),
-  now: assetPath("images/aral-now.png?v=aral2-20260427"),
+  now: assetPath("images/aral_now_new.png"),
   dustHealth: assetPath("images/aral-dust-health.png"),
   natureHuman: assetPath("images/nature-human.png"),
   actions: assetPath("images/aral-actions-bg.png"),
