@@ -1,0 +1,237 @@
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Leaf,
+  Sparkles,
+  UserRound,
+  XCircle,
+} from "lucide-react";
+import {
+  aitysLines,
+  imageSlots,
+  quizOptions,
+  quizQuestion,
+  reactions,
+} from "../utils/content";
+
+function CharacterStage() {
+  return (
+    <div className="card-radius relative min-h-[520px] overflow-hidden border border-white/24 bg-aral-deep shadow-soft">
+      <img
+        src={imageSlots.natureHuman}
+        alt="Табиғат пен Адам бір-біріне қарап сөйлесіп тұрған көрініс"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,45,0.22),rgba(15,61,79,0.04),rgba(80,45,28,0.25))]" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-aral-deep/82 to-transparent" />
+
+      <div className="absolute left-4 top-4 rounded-[8px] border border-white/28 bg-aral-green/72 px-4 py-3 text-white backdrop-blur-md">
+        <p className="text-xs font-black uppercase text-white/66">Сол жақ</p>
+        <p className="text-lg font-black">Табиғат</p>
+      </div>
+      <div className="absolute right-4 top-4 rounded-[8px] border border-white/28 bg-aral-deep/76 px-4 py-3 text-right text-white backdrop-blur-md">
+        <p className="text-xs font-black uppercase text-white/66">Оң жақ</p>
+        <p className="text-lg font-black">Адам</p>
+      </div>
+
+      <div className="absolute bottom-4 left-4 right-4 rounded-[8px] border border-white/24 bg-white/12 p-4 text-white backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-[8px] bg-white text-aral-deep">
+            <Sparkles size={20} />
+          </span>
+          <div>
+            <p className="font-black">Мәтіндік айтыс сахнасы</p>
+            <p className="text-sm leading-6 text-white/72">
+              Әр шумақ табиғат жағдайын және адамның жауапкершілігін мәтін
+              арқылы көрсетеді.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DialogueBubble({ line, index }) {
+  const isNature = line.speaker === "Табиғат";
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 22, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.42 }}
+      className={`card-radius max-w-[920px] border p-4 shadow-soft md:p-5 ${
+        isNature
+          ? "mr-auto border-aral-green/16 bg-white"
+          : "ml-auto border-aral-blue/18 bg-[#eef8fb]"
+      }`}
+    >
+      <div className="flex gap-3">
+        <div
+          className={`grid h-12 w-12 shrink-0 place-items-center rounded-[8px] text-white ${
+            isNature ? "bg-aral-green" : "bg-aral-deep"
+          }`}
+        >
+          {isNature ? <Leaf size={22} /> : <UserRound size={22} />}
+        </div>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-black text-aral-deep">
+              {line.speaker}
+            </h3>
+            <span className="rounded-[8px] bg-sand-100 px-2 py-1 text-xs font-black uppercase text-aral-deep/65">
+              {line.mood}
+            </span>
+            <span className="text-xs font-bold text-aral-deep/45">
+              шумақ {index + 1}
+            </span>
+          </div>
+          <p className="mt-2 text-lg font-semibold leading-8 text-aral-deep/82">
+            {line.text}
+          </p>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+function ResultPanel({ selected }) {
+  if (!selected) return null;
+  const isPositive = selected.correct;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`card-radius mt-5 border p-4 ${
+        isPositive
+          ? "border-aral-green/25 bg-[#edf7ed] text-aral-green"
+          : "border-aral-alert/30 bg-[#fff0ed] text-aral-alert"
+      }`}
+    >
+      <div className="flex gap-3">
+        {isPositive ? (
+          <CheckCircle2 className="mt-1 shrink-0" size={22} />
+        ) : (
+          <XCircle className="mt-1 shrink-0" size={22} />
+        )}
+        <div>
+          <p className="font-black">
+            {isPositive ? "Табиғаттың жауабы" : "Табиғаттың ескертуі"}
+          </p>
+          <p className="mt-1 leading-7">
+            {isPositive ? reactions.positive : reactions.warning}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function AitysDialogue({ answer, onAnswer }) {
+  const selected = quizOptions.find((option) => option.id === answer);
+
+  const choose = (option) => {
+    onAnswer(option.id);
+  };
+
+  return (
+    <section
+      id="aitys"
+      className="section-shell relative overflow-hidden bg-[#dfeee6]"
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,#e7f2ea_0%,#d6ebe4_46%,#f0e5c9_100%)]" />
+      <div className="absolute inset-x-0 top-0 h-56 bg-[linear-gradient(180deg,rgba(15,61,79,0.16),rgba(15,61,79,0))]" />
+      <div className="absolute inset-0 opacity-[0.16] [background-image:linear-gradient(120deg,rgba(15,61,79,0.18)_1px,transparent_1px),linear-gradient(60deg,rgba(31,91,69,0.12)_1px,transparent_1px)] [background-size:96px_96px]" />
+
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <div className="grid gap-7 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+          <motion.div
+            initial={{ opacity: 0, y: 26 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            className="lg:sticky lg:top-28"
+          >
+            <p className="text-sm font-black uppercase text-aral-blue">
+              Интерактивті айтыс
+            </p>
+            <h2 className="mt-3 text-balance text-3xl font-black leading-tight text-aral-deep md:text-5xl">
+              Табиғат пен Адам бір сахнада сөйлейді
+            </h2>
+            <p className="mt-5 text-lg leading-8 text-aral-deep/74">
+              Айтыс форматы мәселені тек факт ретінде емес, жауапкершілік
+              ретінде сезіндіреді. Әр шумақтан кейін адамның таңдауы табиғаттың
+              реакциясын өзгертеді.
+            </p>
+            <div className="mt-6">
+              <CharacterStage />
+            </div>
+          </motion.div>
+
+          <div>
+            <div className="grid gap-4">
+              {aitysLines.map((line, index) => (
+                <DialogueBubble
+                  key={`${line.speaker}-${line.text}`}
+                  line={line}
+                  index={index}
+                />
+              ))}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.45 }}
+              className="glass-panel card-radius mt-6 p-4 md:p-6"
+            >
+              <h3 className="text-xl font-black text-aral-deep">
+                {quizQuestion}
+              </h3>
+              <div className="mt-4 grid gap-3">
+                {quizOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => choose(option)}
+                    className={`card-radius flex min-h-14 items-center gap-3 border p-4 text-left transition hover:-translate-y-1 ${
+                      answer === option.id
+                        ? "border-aral-blue bg-[#e8f6fb]"
+                        : "border-aral-deep/10 bg-white hover:border-aral-blue/40"
+                    }`}
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] bg-aral-deep text-sm font-black text-white">
+                      {option.id}
+                    </span>
+                    <span>
+                      <span className="block font-black text-aral-deep">
+                        {option.label}
+                      </span>
+                      <span className="mt-1 block text-sm font-semibold text-aral-deep/52">
+                        {option.tone}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <ResultPanel selected={selected} />
+              <div className="mt-5 flex justify-end">
+                <a
+                  href="#gesture"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-aral-deep px-5 text-sm font-black text-white shadow-soft transition hover:-translate-y-1"
+                >
+                  Келесі
+                  <ArrowRight size={18} />
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

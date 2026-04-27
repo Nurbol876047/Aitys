@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #fbf7ed;
+  color: #173f35;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(15, 131, 189, 0.13), transparent 30%),
+    linear-gradient(180deg, #fbf7ed 0%, #f3ead2 42%, #fffaf0 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(15, 131, 189, 0.46);
+  outline-offset: 3px;
+}
+
+.section-shell {
+  min-height: 100vh;
+  padding: 92px 20px 42px;
+}
+
+@media (min-width: 768px) {
+  .section-shell {
+    padding: 112px 32px 64px;
+  }
+}
+
+.glass-panel {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 18px 60px rgba(15, 61, 79, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.sand-texture {
+  background:
+    radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.42) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 68%, rgba(122, 86, 38, 0.14) 0 1px, transparent 2px),
+    linear-gradient(135deg, #e4c684, #c99d5b 52%, #f2dfb8);
+  background-size:
+    18px 18px,
+    24px 24px,
+    cover;
+}
+
+.cracked-ground {
+  background:
+    linear-gradient(32deg, transparent 0 47%, rgba(86, 58, 38, 0.45) 48% 50%, transparent 51%),
+    linear-gradient(112deg, transparent 0 58%, rgba(86, 58, 38, 0.35) 59% 61%, transparent 62%),
+    linear-gradient(150deg, transparent 0 62%, rgba(255, 255, 255, 0.24) 63% 65%, transparent 66%),
+    linear-gradient(135deg, #d7b171, #9f743d 62%, #efe3c5);
+  background-size:
+    120px 92px,
+    150px 110px,
+    80px 70px,
+    cover;
+}
+
+.water-shimmer {
+  background:
+    radial-gradient(circle at 25% 22%, rgba(255, 255, 255, 0.56), transparent 18%),
+    radial-gradient(circle at 72% 76%, rgba(76, 206, 221, 0.35), transparent 24%),
+    linear-gradient(135deg, #074d80, #0f83bd 48%, #52c0c7);
+  box-shadow: inset 0 0 70px rgba(255, 255, 255, 0.26);
+}
+
+.card-radius {
+  border-radius: 8px;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.camera-mirror {
+  transform: scaleX(-1);
+}
+
+.clip-before {
+  clip-path: polygon(0 0, var(--split) 0, var(--split) 100%, 0 100%);
+}
+
+.clip-after {
+  clip-path: polygon(var(--split) 0, 100% 0, 100% 100%, var(--split) 100%);
+}
+
+.hero-title-3d {
+  display: inline;
+  perspective: 900px;
+  transform-style: preserve-3d;
+}
+
+.hero-word {
+  display: inline-block;
+  margin-right: 0.22em;
+  white-space: nowrap;
+}
+
+.hero-letter {
+  display: inline-block;
+  transform-origin: 50% 72%;
+  animation: floatHeroLetter 4.8s ease-in-out infinite;
+  animation-delay: var(--letter-delay);
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.42));
+  text-shadow:
+    0 1px 0 rgba(234, 250, 249, 0.95),
+    0 3px 0 rgba(132, 171, 166, 0.92),
+    0 6px 0 rgba(21, 78, 82, 0.76),
+    0 10px 18px rgba(0, 0, 0, 0.62),
+    0 22px 48px rgba(15, 131, 189, 0.44);
+  will-change: transform;
+}
+
+@keyframes floatHeroLetter {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg);
+  }
+  45% {
+    transform: translate3d(0, -10px, 24px) rotateX(8deg) rotateY(-5deg);
+  }
+  70% {
+    transform: translate3d(0, 2px, 12px) rotateX(-3deg) rotateY(4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-letter {
+    animation: none;
+  }
+}
+
+.aitys-particle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(31, 91, 69, 0.24);
+  box-shadow:
+    0 0 24px rgba(15, 131, 189, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.38);
+  animation: floatParticle 8s ease-in-out infinite;
+}
+
+@keyframes floatParticle {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.34;
+  }
+  50% {
+    transform: translate3d(18px, -26px, 0) scale(1.35);
+    opacity: 0.72;
+  }
+}
