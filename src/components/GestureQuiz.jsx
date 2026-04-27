@@ -42,6 +42,9 @@ const HAND_CONNECTIONS = [
 
 const ANSWER_HOLD_FRAMES = 16;
 const ANSWER_COOLDOWN = 1800;
+const TRACKING_GRACE_FRAMES = 10;
+const FINGER_HISTORY_SIZE = 5;
+const CAMERA_FRAME_INTERVAL = 70;
 const MEDIAPIPE_HANDS_PATH = `${import.meta.env.BASE_URL}mediapipe/hands/`;
 
 const gestureTabs = [
@@ -74,7 +77,7 @@ function getHandQuality(landmarks, handedness) {
   const palmSpan = distance(landmarks[5], landmarks[17]);
   const wristToMiddle = distance(landmarks[0], landmarks[9]);
 
-  if (score < 0.68 || palmSpan < 0.045 || wristToMiddle < 0.065) {
+  if (score < 0.46 || palmSpan < 0.03 || wristToMiddle < 0.045) {
     return { valid: false, reason: "Қолыңызды камераға жақынырақ әрі анық көрсетіңіз." };
   }
 
@@ -88,7 +91,7 @@ function getHandQuality(landmarks, handedness) {
 function countAnswerFingers(landmarks, quality) {
   if (!quality.valid) return 0;
 
-  const threshold = clamp(quality.palmSpan * 0.32, 0.026, 0.052);
+  const threshold = clamp(quality.palmSpan * 0.26, 0.018, 0.045);
   const fingers = [
     { tip: 8, pip: 6, mcp: 5 },
     { tip: 12, pip: 10, mcp: 9 },
@@ -113,7 +116,7 @@ function getIndexPointer(landmarks, quality) {
   if (!quality.valid) return null;
   const indexTip = landmarks[8];
   const indexPip = landmarks[6];
-  const threshold = clamp(quality.palmSpan * 0.24, 0.022, 0.045);
+  const threshold = clamp(quality.palmSpan * 0.18, 0.015, 0.04);
   const indexRaised = indexTip.y < indexPip.y - threshold;
 
   if (!indexRaised) return null;
@@ -151,7 +154,7 @@ function drawHand(canvas, landmarks, activeCount = 0) {
   });
 
   landmarks.forEach((point, index) => {
-    const activeTips = [8, 12, 16].slice(0, activeCount);
+    const activeTips = [8, 12, 16, 20].slice(0, activeCount);
     context.beginPath();
     context.arc(point.x * width, point.y * height, activeTips.includes(index) ? 8 : 5, 0, Math.PI * 2);
     context.fillStyle = activeTips.includes(index) ? "#ffffff" : "#5eead4";
@@ -169,6 +172,83 @@ function getMediapipeExport(module, exportName) {
   );
 }
 
+function getMode(values) {
+  const counts = new Map();
+  values.forEach((value) => counts.set(value, (counts.get(value) ?? 0) + 1));
+
+  return values.reduce((best, value) => {
+    const valueCount = counts.get(value) ?? 0;
+    const bestCount = counts.get(best) ?? 0;
+    return valueCount >= bestCount ? value : best;
+  }, values.at(-1) ?? 0);
+}
+
+function resolveHandFrame(results, cacheRef) {
+  const rawLandmarks = results.multiHandLandmarks?.[0];
+  const rawQuality = getHandQuality(rawLandmarks, results.multiHandedness?.[0]);
+  const cache = cacheRef.current;
+
+  if (rawQuality.valid) {
+    const rawCount = countAnswerFingers(rawLandmarks, rawQuality);
+    const counts = [...cache.counts, rawCount].slice(-FINGER_HISTORY_SIZE);
+    const count = getMode(counts);
+    const pointer = getIndexPointer(rawLandmarks, rawQuality);
+    const smoothedPointer =
+      pointer && cache.pointer
+        ? {
+            x: cache.pointer.x * 0.62 + pointer.x * 0.38,
+            y: cache.pointer.y * 0.62 + pointer.y * 0.38,
+          }
+        : pointer;
+
+    cacheRef.current = {
+      landmarks: rawLandmarks,
+      quality: rawQuality,
+      count,
+      counts,
+      pointer: smoothedPointer,
+      misses: 0,
+    };
+
+    return {
+      landmarks: rawLandmarks,
+      quality: rawQuality,
+      count,
+      pointer: smoothedPointer,
+      stale: false,
+    };
+  }
+
+  if (cache.landmarks && cache.misses < TRACKING_GRACE_FRAMES) {
+    cache.misses += 1;
+
+    return {
+      landmarks: cache.landmarks,
+      quality: cache.quality,
+      count: cache.count,
+      pointer: cache.pointer,
+      stale: true,
+    };
+  }
+
+  cacheRef.current = {
+    landmarks: null,
+    quality: null,
+    count: 0,
+    counts: [],
+    pointer: null,
+    misses: 0,
+  };
+
+  return {
+    landmarks: null,
+    quality: rawQuality,
+    count: 0,
+    pointer: null,
+    stale: false,
+  };
+}
+
 function getCameraErrorMessage(error) {
   if (!window.isSecureContext) {
     return "Камера тек HTTPS немесе localhost арқылы іске қосылады. Сайтты https://... немесе http://localhost:5173 арқылы ашыңыз.";
@@ -179,7 +259,7 @@ function getCameraErrorMessage(error) {
   }
 
   if (error?.name === "NotFoundError" || error?.name === "DevicesNotFoundError") {
-    return "Камера табылмады. Құрылғы камерасын қосып, бетті жаңартыңыз.";
+    return "Камера табылмады. Браузер немесе жүйе камераны көріп тұрғанын тексеріңіз: камера жабылмаған болсын, драйвер қосулы болсын, қажет болса бетті жаңартыңыз. Қолмен жауап беру батырмалары жұмыс істей береді.";
   }
 
   if (error?.name === "NotReadableError" || error?.name === "TrackStartError") {
@@ -189,15 +269,83 @@ function getCameraErrorMessage(error) {
   return error?.message || "Камера қосылмады. Батырмамен де жауап беруге болады.";
 }
 
-async function createHandCamera(videoElement, onResults) {
-  const [handsModule, cameraModule] = await Promise.all([
-    import("@mediapipe/hands"),
-    import("@mediapipe/camera_utils"),
-  ]);
-  const Hands = getMediapipeExport(handsModule, "Hands");
-  const CameraRunner = getMediapipeExport(cameraModule, "Camera");
+function waitForVideo(videoElement) {
+  if (videoElement.readyState >= 2) return Promise.resolve();
 
-  if (!Hands || !CameraRunner) {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Камера бейнесі жүктелмеді. Бетті жаңартып көріңіз."));
+    }, 8000);
+
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      videoElement.removeEventListener("loadeddata", handleReady);
+      videoElement.removeEventListener("canplay", handleReady);
+      videoElement.removeEventListener("error", handleError);
+    };
+
+    const handleReady = () => {
+      cleanup();
+      resolve();
+    };
+
+    const handleError = () => {
+      cleanup();
+      reject(new Error("Камера бейнесін оқу мүмкін болмады."));
+    };
+
+    videoElement.addEventListener("loadeddata", handleReady, { once: true });
+    videoElement.addEventListener("canplay", handleReady, { once: true });
+    videoElement.addEventListener("error", handleError, { once: true });
+  });
+}
+
+async function requestCameraStream() {
+  const attempts = [
+    {
+      video: {
+        facingMode: { ideal: "user" },
+        width: { ideal: 960 },
+        height: { ideal: 720 },
+      },
+      audio: false,
+    },
+    {
+      video: {
+        facingMode: { ideal: "user" },
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+      },
+      audio: false,
+    },
+    { video: true, audio: false },
+  ];
+  let lastError;
+
+  for (const constraints of attempts) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (error) {
+      lastError = error;
+      if (
+        error?.name === "NotAllowedError" ||
+        error?.name === "SecurityError" ||
+        error?.name === "NotFoundError"
+      ) {
+        break;
+      }
+    }
+  }
+
+  throw lastError ?? new Error("Камера қосылмады.");
+}
+
+async function createHandCamera(videoElement, onResults) {
+  const handsModule = await import("@mediapipe/hands");
+  const Hands = getMediapipeExport(handsModule, "Hands");
+
+  if (!Hands) {
     throw new Error("Қол қимылын тану модулі жүктелмеді. Бетті жаңартып көріңіз.");
   }
 
@@ -209,22 +357,60 @@ async function createHandCamera(videoElement, onResults) {
     maxNumHands: 1,
     modelComplexity: 0,
     selfieMode: true,
-    minDetectionConfidence: 0.68,
-    minTrackingConfidence: 0.62,
+    minDetectionConfidence: 0.52,
+    minTrackingConfidence: 0.48,
   });
   hands.onResults(onResults);
 
-  const camera = new CameraRunner(videoElement, {
-    onFrame: async () => {
-      if (videoElement.readyState >= 2) {
-        await hands.send({ image: videoElement });
-      }
-    },
-    width: 960,
-    height: 720,
-  });
+  let stream;
+  let stopped = false;
+  let frameId = 0;
+  let sending = false;
+  let lastFrameAt = 0;
 
-  await camera.start();
+  try {
+    stream = await requestCameraStream();
+    videoElement.srcObject = stream;
+    await videoElement.play();
+    await waitForVideo(videoElement);
+  } catch (error) {
+    stream?.getTracks().forEach((track) => track.stop());
+    videoElement.srcObject = null;
+    hands.close?.();
+    throw error;
+  }
+
+  const runFrame = async (timestamp) => {
+    if (stopped) return;
+
+    if (
+      videoElement.readyState >= 2 &&
+      !videoElement.paused &&
+      !sending &&
+      timestamp - lastFrameAt >= CAMERA_FRAME_INTERVAL
+    ) {
+      sending = true;
+      lastFrameAt = timestamp;
+      try {
+        await hands.send({ image: videoElement });
+      } finally {
+        sending = false;
+      }
+    }
+
+    frameId = window.requestAnimationFrame(runFrame);
+  };
+
+  frameId = window.requestAnimationFrame(runFrame);
+
+  const camera = {
+    stop() {
+      stopped = true;
+      window.cancelAnimationFrame(frameId);
+      stream.getTracks().forEach((track) => track.stop());
+    },
+  };
+
   return { hands, camera };
 }
 
@@ -364,11 +550,20 @@ function GestureComparePanel() {
   const [gestureLog, setGestureLog] = useState(
     "Камераны қосып, сұқ саусағыңызды оңға немесе солға жылжытыңыз.",
   );
+  const trackingRef = useRef({
+    landmarks: null,
+    quality: null,
+    count: 0,
+    counts: [],
+    pointer: null,
+    misses: 0,
+  });
 
   const handleResults = useCallback((results) => {
-    const landmarks = results.multiHandLandmarks?.[0];
-    const quality = getHandQuality(landmarks, results.multiHandedness?.[0]);
-    const count = countAnswerFingers(landmarks, quality);
+    const { landmarks, quality, count, pointer, stale } = resolveHandFrame(
+      results,
+      trackingRef,
+    );
     const canvas = camera.canvasRef.current;
     if (canvas) drawHand(canvas, landmarks, count);
 
@@ -379,14 +574,17 @@ function GestureComparePanel() {
       return;
     }
 
-    const pointer = getIndexPointer(landmarks, quality);
     setFingerCount(count);
     setGesturePoint(pointer);
 
     if (pointer) {
       const targetSplit = clamp(pointer.x, 18, 82);
       setSplit((current) => Math.round(current * 0.78 + targetSplit * 0.22));
-      setGestureLog("Салыстыру сызығы қол қимылымен қозғалып тұр.");
+      setGestureLog(
+        stale
+          ? "Қол бір сәт жоғалды, соңғы қимыл сақталып тұр."
+          : "Салыстыру сызығы қол қимылымен қозғалып тұр.",
+      );
     } else {
       setGestureLog("Сызықты жылжыту үшін сұқ саусақты анық көрсетіңіз.");
     }
@@ -395,6 +593,14 @@ function GestureComparePanel() {
   const camera = useHandCamera({
     onResults: handleResults,
     onStopLog: () => {
+      trackingRef.current = {
+        landmarks: null,
+        quality: null,
+        count: 0,
+        counts: [],
+        pointer: null,
+        misses: 0,
+      };
       setFingerCount(0);
       setGesturePoint(null);
     },
@@ -483,6 +689,14 @@ function GestureComparePanel() {
 }
 
 function GestureAnswerPanel({ onAnswer }) {
+  const trackingRef = useRef({
+    landmarks: null,
+    quality: null,
+    count: 0,
+    counts: [],
+    pointer: null,
+    misses: 0,
+  });
   const stableRef = useRef({
     count: 0,
     frames: 0,
@@ -551,9 +765,10 @@ function GestureAnswerPanel({ onAnswer }) {
   const handleResults = useCallback(
     (results) => {
       const latest = quizStateRef.current;
-      const landmarks = results.multiHandLandmarks?.[0];
-      const quality = getHandQuality(landmarks, results.multiHandedness?.[0]);
-      const count = countAnswerFingers(landmarks, quality);
+      const { landmarks, quality, count, stale } = resolveHandFrame(
+        results,
+        trackingRef,
+      );
       const canvas = camera.canvasRef.current;
       if (canvas) drawHand(canvas, landmarks, count);
 
@@ -568,6 +783,10 @@ function GestureAnswerPanel({ onAnswer }) {
       }
 
       setFingerCount(count);
+
+      if (stale) {
+        setGestureLog("Қол бір сәт жоғалды, соңғы танылған қимыл сақталып тұр.");
+      }
 
       if (latest.finished) {
         setGestureLog("Тест аяқталды. Нәтиже төменде көрсетілді.");
@@ -611,7 +830,9 @@ function GestureAnswerPanel({ onAnswer }) {
 
       const progress = clamp((stable.frames / ANSWER_HOLD_FRAMES) * 100, 0, 100);
       setHoldProgress(progress);
-      setGestureLog(`${count} саусақ көрінді. Жауап қабылдануы үшін қолды сәл ұстап тұрыңыз.`);
+      if (!stale) {
+        setGestureLog(`${count} саусақ көрінді. Жауап қабылдануы үшін қолды сәл ұстап тұрыңыз.`);
+      }
 
       const now = Date.now();
       if (
@@ -628,6 +849,14 @@ function GestureAnswerPanel({ onAnswer }) {
   const camera = useHandCamera({
     onResults: handleResults,
     onStopLog: () => {
+      trackingRef.current = {
+        landmarks: null,
+        quality: null,
+        count: 0,
+        counts: [],
+        pointer: null,
+        misses: 0,
+      };
       setFingerCount(0);
       setHoldProgress(0);
     },
@@ -643,6 +872,14 @@ function GestureAnswerPanel({ onAnswer }) {
       frames: 0,
       lastEmit: Date.now(),
       needsRelease: false,
+    };
+    trackingRef.current = {
+      landmarks: null,
+      quality: null,
+      count: 0,
+      counts: [],
+      pointer: null,
+      misses: 0,
     };
     setGestureLog("Камераны қосып, бас бармақсыз 1, 2 немесе 3 саусақ көрсетіңіз.");
   };
